@@ -48,6 +48,7 @@ class User(dict):
             log.debug("Wrong password")
             return
         self.update(**dict(row))
+        await self.backend.update_last_login(self["id"])
         return self
 
     def login(self):
@@ -59,7 +60,6 @@ class User(dict):
         self.session[backend.session_hash_key] = self._get_session_hash(
             self["password"]
         )
-        # TODO: update `last_login` field in db
 
     def logout(self):
         self.clear()

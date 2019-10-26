@@ -1,4 +1,5 @@
 from .base_backend import BaseBackend
+from .utils import now_utc
 
 
 class Backend(BaseBackend):
@@ -11,8 +12,7 @@ class Backend(BaseBackend):
             sql = f"SELECT * FROM auth_user WHERE {key} = $1"
             return await con.fetchrow(sql, val)
 
-    async def save(self, key, value, expire_date):
+    async def update_last_login(self, user_id):
         async with self.pool.acquire() as con:
-            if key:
-                return await self._update(con, key, value, expire_date)
-            return await self._insert_new(con, value, expire_date)
+            sql = f"UPDATE auth_user SET last_login = $1 WHERE id = $2"
+            await con.execute(sql, now_utc(), user_id)
