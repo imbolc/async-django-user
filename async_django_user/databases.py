@@ -1,5 +1,5 @@
-from .utils import new_session_key
 from .base_backend import BaseBackend
+from .utils import now_utc
 
 
 class Backend(BaseBackend):
@@ -7,43 +7,10 @@ class Backend(BaseBackend):
         self.db = db
         super().__init__(*args, **kwargs)
 
-    async def load(self, key):
-        sql = "SELECT * FROM django_session WHERE session_key = :key"
-        return await (self.db.fetch_one(sql, {"key": key}))
+    async def load(self, key, val):
+        sql = f"SELECT * FROM auth_user WHERE {key} = :val"
+        return await self.db.fetch_one(sql, {"val": val})
 
-    async def save(self, key, value, expire_date):
-        if key:
-            return await (self._update(key, value, expire_date))
-        else:
-            return await (self._insert_new(value, expire_date))
-
-    async def _insert_new(self, value, expire_date):
-        sql = """
-            INSERT INTO django_session (
-                session_key,
-                session_data,
-                expire_date,
-            ) VALUES (:key, :value, :expire_date)
-        """
-        while True:
-            key = new_session_key()
-            try:
-                await self.db.execute(
-                    sql,
-                    {"key": key, "value": value, "expire_date": expire_date},
-                )
-            except Exception:
-                continue
-            break
-        return key
-
-    async def _update(self, key, value, expire_date):
-        sql = """
-            UPDATE django_session
-            SET session_data = :value, expire_date = :expire_date
-            WHERE session_key = :key
-        """
-        await self.db.fetch_one(
-            sql, {"key": key, "value": value, "expire_date": expire_date}
-        )
-        return key
+    async def update_last_login(self, user_id):
+        sql = "UPDATE auth_user SET last_login = :now WHERE id = :id"
+        await self.db.execute(sql, {"now": now_utc(), "id": user_id})
