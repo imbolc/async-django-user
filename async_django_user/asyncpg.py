@@ -14,5 +14,5 @@ class Backend(BaseBackend):
 
     async def update_last_login(self, user_id):
         async with self.pool.acquire() as con:
-            sql = f"UPDATE auth_user SET last_login = $1 WHERE id = $2"
+            sql = "UPDATE auth_user SET last_login = $1 WHERE id = $2"
             await con.execute(sql, now_utc(), user_id)

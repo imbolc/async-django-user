@@ -6,6 +6,9 @@ from aiohttp import web
 from databases import Database
 import async_django_session.aiohttp
 import async_django_session.databases
+import async_django_user.databases
+import async_django_user.aiohttp
+import ujson
 
 import cfg
 
@@ -21,18 +24,53 @@ async def on_cleanup(app):
 
 
 async def index(request):
+    with open("index.html") as f:
+        return web.Response(text=f.read(), content_type="text/html")
+
+
+async def me(request):
+    user = await request.get_user()
     session = await request.get_session()
-    framework = "aiohttp"
-    session[framework] = session.get(framework, 0) + 1
-    return web.json_response({"framework": framework, "session": session})
+    return web.json_response(
+        {"user": user, "session": session}, dumps=ujson.dumps
+    )
 
 
+async def login(request):
+    user = await request.get_user()
+    credentials = await request.json()
+    if not await user.authenticate(**credentials):
+        return web.json_response(
+            {"detail": "Bad username or password"}, status=401
+        )
+    if not user["is_active"]:
+        return web.json_response({"detail": "User isn't active"}, status=401)
+    user.login()
+    return web.json_response({})
+
+
+async def logout(request):
+    user = await request.get_user()
+    user.logout()
+    return web.json_response({})
+
+
+user_middleware = async_django_user.aiohttp.middleware(
+    async_django_user.databases.Backend(db, cfg.SECRET_KEY)
+)
 session_middleware = async_django_session.aiohttp.middleware(
     async_django_session.databases.Backend(db, cfg.SECRET_KEY)
 )
 
-app = web.Application(middlewares=[session_middleware])
-app.add_routes([web.get("/", index)])
+app = web.Application(middlewares=[session_middleware, user_middleware])
+app.add_routes(
+    [
+        web.get("/", index),
+        web.get("/api/me", me),
+        web.post("/api/login", login),
+        web.post("/api/logout", logout),
+    ]
+)
 app.on_startup.append(on_startup)
 app.on_cleanup.append(on_cleanup)
 
