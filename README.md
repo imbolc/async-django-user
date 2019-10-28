@@ -16,107 +16,67 @@ There's two ways of communicating to database available:
     ```python
     database = databases.Database(DB_URI)
     await database.connect()
-    backend = async_django_session.databases.Backend(database, SECRET_KEY)
+    backend = async_django_user.databases.Backend(database, SECRET_KEY)
     ```
 - or directly through [asyncpg][] (PostgreSQL only):
     ```python
     pool = await asyncpg.create_pool(DB_URI)
-    backend = async_django_session.asyncpg.Backend(pool, SECRET_KEY)
+    backend = async_django_user.asyncpg.Backend(pool, SECRET_KEY)
     ```
 
 ### Session
 
-To fetch session from db by its key there's `backend.get_session` method. If
-`key` is `None` a new session will be created:
+To fetch an user from db by its id stored in django session there's
+`backend.get_user` method:
 ```python
-session = backend.get_session(key)
+user = backend.get_user(session)
 ```
-It's lazy so the session data won't be actually fetched until you call its
+It's lazy so the user data won't be actually fetched until you call its
 `load` method. In caches the result, so it's inexpensive to call it multiple
 times:
 ```python
-await session.load()
+await user.load()
 ```
-You can combine them into a single line as the `load` method returns session
+You can combine them into a single line as the `load` method returns the user
 itself:
 ```python
-session = await backend.get_session(key).load()
+user = await backend.get_user(session).load()
 ```
-Session provides dict-interface to read / write data:
-```python
-session["foo"] = "bar"
-print(session["foo"])
-```
-To sync session with database you should explicitly call its `save` method. It
-won't make unnecessary db call if the session wasn't changed (the boolean value
-it returns is intend to indicate if it was the case).
-```python
-saved = await session.save()
-```
-During saving of a new session a random key will be generated and available as
-`session.key` parameter afterwords.
+User provides dict interface to it's data (eg `user["username"]`) and a few
+methods:
+- `await user.authenticate(username, password)` - checks credentials and populates
+  the user from database if they're valid
+- `user.login()` - sets session variables logging the user in
+- `user.logout()` - clears the session data
+- `await user.set_password(password)` - sets a new password for the user
 
 Frameworks integration
 ----------------------
-There's built-in middlewares for a few frameworks to automatically load (using
-session id from cookies) and save sessions.
+There's built-in middlewares for a few async frameworks to automatically load
+user of the current request. Take a look at [exapmles][] folder for:
+- [aiohttp example][] with [databases backend][]
+- [starlette example][] with [asyncpg backend][]
+- [fastapi example][] with [asyncpg backend][]
 
-### Aiohttp
-After adding of [session middleware][aiohttp middleware]:
-```python
-session_middleware = async_django_session.aiohttp.middleware(
-    async_django_session.databases.Backend(db, SECRET_KEY)
-)
-app = web.Application(middlewares=[session_middleware])
-```
-You can get requests session as:
-```python
-session = await request.get_session()
-```
-A full aiohttp example can be found [here][aiohttp example].
-
-### Starlette
-After adding of [session middleware][starlette middleware]:
-```python
-async_django_session.starlette.middleware(
-    app, async_django_session.databases.Backend(db, SECRET))
-)
-```
-Session of a current request is available as:
-```python
-session = await request.state.get_session()
-```
-
-A working starlette example is [here][starlette example].
-
-### Fastapi
-Perform starlette app initialization from above as fastapi based on it.
-After that you can get session using dependency injection as:
-```python
-from async_django_session.fastapi import get_session
-from async_django_session.session import Session
-
-async def index(session: Session = Depends(get_session)):
-    ...
-```
-
-A working fastapi example is [here][fastapi example].
 
 Running examples
 ----------------
 Running the [examples][] you can see different frameworks using the same session
-data. To see session data open <http://localhost:8000/> after running of each
-example.
+and user data.
 
-Install requirements:
+Install the requirements:
 
     cd examples
     pip install -r requirements.txt
 
 Create database and tables:
 
-    createdb async_django_session
+    createdb async_django_user
     python django_app.py migrate
+
+Create a user:
+
+    python django_app.py createsuperuser
 
 Run [aiohttp example][] which uses [databases backend][]:
 
@@ -140,12 +100,12 @@ Run [django example][]:
 [asyncpg]: https://github.com/MagicStack/asyncpg
 [databases]: https://github.com/encode/databases
 [django]: https://github.com/django/django
-[examples]: https://github.com/imbolc/async_django_session/tree/master/examples
-[django example]: https://github.com/imbolc/async_django_session/tree/master/examples/django_app.py
-[starlette example]: https://github.com/imbolc/async_django_session/tree/master/examples/starlette_app.py
-[fastapi example]: https://github.com/imbolc/async_django_session/tree/master/examples/fastapi_app.py
-[aiohttp example]: https://github.com/imbolc/async_django_session/tree/master/examples/aiohttp_app.py
-[asyncpg backend]: https://github.com/imbolc/async_django_session/tree/master/async_django_session/asyncpg.py
-[databases backend]: https://github.com/imbolc/async_django_session/tree/master/async_django_session/databases.py
-[aiohttp middleware]: https://github.com/imbolc/async_django_session/tree/master/async_django_session/aiohttp.py
-[starlette middleware]: https://github.com/imbolc/async_django_session/tree/master/async_django_session/starlette.py
+[examples]: https://github.com/imbolc/async_django_user/tree/master/examples
+[django example]: https://github.com/imbolc/async_django_user/tree/master/examples/django_app.py
+[starlette example]: https://github.com/imbolc/async_django_user/tree/master/examples/starlette_app.py
+[fastapi example]: https://github.com/imbolc/async_django_user/tree/master/examples/fastapi_app.py
+[aiohttp example]: https://github.com/imbolc/async_django_user/tree/master/examples/aiohttp_app.py
+[asyncpg backend]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/asyncpg.py
+[databases backend]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/databases.py
+[aiohttp middleware]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/aiohttp.py
+[starlette middleware]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/starlette.py
