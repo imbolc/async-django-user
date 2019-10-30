@@ -7,7 +7,7 @@ Using [django][] user with async frameworks like [aiohttp][], [starlette][] etc.
 
 tl;dr
 -----
-Take a look at registration / authorization exapmles for
+Take a look at registration / authorization examples for
 [aiohttp + databases][aiohttp example]
 or [starlette + asyncpg][starlette example].
 
@@ -58,7 +58,7 @@ methods:
 Frameworks integration
 ----------------------
 There's built-in middlewares for a few async frameworks to automatically load
-user of the current request. Take a look at [exapmles][] folder for:
+user of the current request. Take a look at [examples][] folder for:
 - [aiohttp example][] with [databases backend][]
 - [starlette example][] with [asyncpg backend][]
 
