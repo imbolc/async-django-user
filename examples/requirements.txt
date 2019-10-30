@@ -1,7 +1,6 @@
 aiohttp
 asyncpg
 django
-fastapi
 psycopg2-binary
 starlette
 ujson

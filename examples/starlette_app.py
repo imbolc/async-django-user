@@ -64,9 +64,9 @@ async def login(request):
     user = await request.state.get_user()
     credentials = await request.json()
     if not await user.authenticate(**credentials):
-        return UJSONResponse({"detail": "Bad username or password"}, 401)
+        return UJSONResponse({"message": "Bad username or password"}, 400)
     if not user["is_active"]:
-        return UJSONResponse({"detail": "User isn't active"}, 401)
+        return UJSONResponse({"message": "User isn't active"}, 400)
     user.login()
     return UJSONResponse({})
 
@@ -74,6 +74,43 @@ async def login(request):
 @app.route("/api/logout", methods=["post"])
 async def logout(request):
     user = await request.state.get_user()
+    user.logout()
+    return UJSONResponse({})
+
+
+@app.route("/api/register", methods=["post"])
+async def register(request):
+    data = await request.json()
+    user = await request.state.get_user()
+    if user:
+        return UJSONResponse({"message": "Log out first"}, 400)
+    user.update(
+        {
+            "email": "",
+            "username": data["username"],
+            "first_name": "",
+            "last_name": "",
+        }
+    )
+    user.set_password(data["password"])
+    try:
+        await user.create()
+    except asyncpg.exceptions.UniqueViolationError:
+        return UJSONResponse(
+            {"message": "The username is already in use"}, 400
+        )
+    user.login()
+    return UJSONResponse({})
+
+
+@app.route("/api/change-password", methods=["post"])
+async def change_password(request):
+    data = await request.json()
+    user = await request.state.get_user()
+    if not user:
+        return UJSONResponse({"message": "Log in first"}, 400)
+    user.set_password(data["password"])
+    await user.save(["password"])
     user.logout()
     return UJSONResponse({})
 

@@ -1,26 +1,30 @@
-<form id="login" onsubmit="event.preventDefault(); login()">
+<form id="guest" onsubmit="event.preventDefault(); auth()">
     <input type="text" name="username" placeholder="username" required><br>
     <input type="password" name="password" placeholder="password" required><br>
     <button type="submit">login</button>
+    <button name="register" onclick="event.preventDefault(); auth(true)">register</button>
 </form>
 
-<button id="logout" onclick="logout()">logout</button>
+<form id="user" onsubmit="event.preventDefault(); change_password()">
+    <input type="password" name="password" placeholder="new password" required>
+    <button type="submit">change password</button>
+    <button onclick="event.preventDefault(); logout()">logout</button>
+</form>
 
 <h3>user</h3>
-<pre id="user"></pre>
+<pre id="user-data"></pre>
 
 <h3>session</h3>
 <pre id="session"></pre>
-
 
 <script>
     let byId = (id) => document.getElementById(id)
 
     function set_user(user, session) {
-        byId("user").innerHTML = JSON.stringify(user, null, 4)
+        byId("user-data").innerHTML = JSON.stringify(user, null, 4)
         byId("session").innerHTML = JSON.stringify(session, null, 4)
-        byId("login").style.display = user.id ? "none" : "block"
-        byId("logout").style.display = !user.id ? "none" : "block"
+        byId("guest").style.display = user.id ? "none" : "block"
+        byId("user").style.display = !user.id ? "none" : "block"
     }
 
     async function load_user() {
@@ -34,10 +38,11 @@
         }
     }
 
-    async function login() {
-        let form = new FormData(byId("login"))
+    async function auth(register) {
+        let form = new FormData(byId("guest"))
+        let url = register ? "/api/register" : "/api/login"
         try {
-            let r = await fetch("/api/login", {
+            let r = await fetch(url, {
                 method: "POST",
                 body: JSON.stringify(Object.fromEntries(form)),
                 headers: {
@@ -47,7 +52,30 @@
             if (!r.ok) { throw r }
             await load_user()
         } catch (e) {
-            if (e.status === 401) {
+            if (e.status === 400) {
+                let { message } = await e.json()
+                alert(message)
+            } else {
+                alert(e.statusText || e.message)
+            }
+        }
+    }
+
+    async function change_password(register) {
+        let form = new FormData(byId("user"))
+        try {
+            let r = await fetch("/api/change-password", {
+                method: "POST",
+                body: JSON.stringify(Object.fromEntries(form)),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            if (!r.ok) { throw r }
+            await load_user()
+            alert("Password changed, try to log in")
+        } catch (e) {
+            if (e.status === 400) {
                 let { detail } = await e.json()
                 alert(detail)
             } else {

@@ -2,6 +2,8 @@ import sys
 
 sys.path.insert(0, "..")  # noqa
 
+from functools import partial
+
 from aiohttp import web
 from databases import Database
 import async_django_session.aiohttp
@@ -13,6 +15,7 @@ import ujson
 import cfg
 
 db = Database(cfg.DB_URI)
+jsonify = partial(web.json_response, dumps=ujson.dumps)
 
 
 async def on_startup(app):
@@ -31,20 +34,16 @@ async def index(request):
 async def me(request):
     user = await request.get_user()
     session = await request.get_session()
-    return web.json_response(
-        {"user": user, "session": session}, dumps=ujson.dumps
-    )
+    return jsonify({"user": user, "session": session})
 
 
 async def login(request):
     user = await request.get_user()
     credentials = await request.json()
     if not await user.authenticate(**credentials):
-        return web.json_response(
-            {"detail": "Bad username or password"}, status=401
-        )
+        return jsonify({"message": "Bad username or password"}, status=400)
     if not user["is_active"]:
-        return web.json_response({"detail": "User isn't active"}, status=401)
+        return jsonify({"message": "User isn't active"}, status=400)
     user.login()
     return web.json_response({})
 
@@ -52,7 +51,42 @@ async def login(request):
 async def logout(request):
     user = await request.get_user()
     user.logout()
-    return web.json_response({})
+    return jsonify({})
+
+
+async def register(request):
+    data = await request.json()
+    user = await request.get_user()
+    if user:
+        return jsonify({"message": "Log out first"}, status=400)
+    user.update(
+        {
+            "email": "",
+            "username": data["username"],
+            "first_name": "",
+            "last_name": "",
+        }
+    )
+    user.set_password(data["password"])
+    try:
+        await user.create()
+    except Exception:
+        return jsonify(
+            {"message": "The username is already in use"}, status=400
+        )
+    user.login()
+    return jsonify({})
+
+
+async def change_password(request):
+    data = await request.json()
+    user = await request.get_user()
+    if not user:
+        return jsonify({"message": "Log in first"}, status=400)
+    user.set_password(data["password"])
+    await user.save(["password"])
+    user.logout()
+    return jsonify({})
 
 
 user_middleware = async_django_user.aiohttp.middleware(
@@ -69,6 +103,8 @@ app.add_routes(
         web.get("/api/me", me),
         web.post("/api/login", login),
         web.post("/api/logout", logout),
+        web.post("/api/register", register),
+        web.post("/api/change-password", change_password),
     ]
 )
 app.on_startup.append(on_startup)

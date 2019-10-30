@@ -53,7 +53,11 @@ def index(request):
     framework = "django"
     session[framework] = request.session.get(framework, 0) + 1
     return JsonResponse(
-        {"framework": framework, "session": dict(request.session)}
+        {
+            "framework": framework,
+            "session": dict(request.session),
+            "user": str(request.user),
+        }
     )
 
 

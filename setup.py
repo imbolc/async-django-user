@@ -17,7 +17,7 @@ setuptools.setup(
     long_description=open("./README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/imbolc/async_django_user",
-    packages=["async_django_user"],
+    packages=["async-django-user"],
     author="Imbolc",
     author_email="imbolc@imbolc.name",
     license="MIT",

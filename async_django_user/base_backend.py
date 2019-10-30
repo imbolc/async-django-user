@@ -21,8 +21,8 @@ class BaseBackend:
         session_hash_salt="django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash",  # noqa
         session_id_key="_auth_user_id",
         username_field="username",
+        users_table="auth_user",
     ):
-        self.password_hashers = password_hashers
         self.secret = secret
         self.session_backend_key = session_backend_key
         self.session_backend_val = session_backend_val
@@ -31,12 +31,13 @@ class BaseBackend:
         self.salted_secret = sha1(
             (session_hash_salt + secret).encode("utf-8")
         ).digest()
-        self.hashers = [cls() for cls in self.password_hashers]
+        self.hashers = [cls() for cls in password_hashers]
         self.hashers_by_algorithm = {h.algorithm: h for h in self.hashers}
         self.username_field = username_field
+        self.users_table = users_table
 
-    def get_user(self, session):
-        return User(self, session)
+    def get_user_from_session(self, session):
+        return User.get_from_session(self, session)
 
     def get_hasher(self, algorithm="default"):
         if hasattr(algorithm, "algorithm"):
