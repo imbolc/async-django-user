@@ -75,7 +75,7 @@ Install the requirements:
 
 Create database and tables:
 
-    createdb async_django_user
+    createdb async_django_session
     python django_app.py migrate
 
 Create a user:
@@ -99,11 +99,11 @@ Run [django example][]:
 [asyncpg]: https://github.com/MagicStack/asyncpg
 [databases]: https://github.com/encode/databases
 [django]: https://github.com/django/django
-[examples]: https://github.com/imbolc/async_django_user/tree/master/examples
-[django example]: https://github.com/imbolc/async_django_user/tree/master/examples/django_app.py
-[starlette example]: https://github.com/imbolc/async_django_user/tree/master/examples/starlette_app.py
-[aiohttp example]: https://github.com/imbolc/async_django_user/tree/master/examples/aiohttp_app.py
-[asyncpg backend]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/asyncpg.py
-[databases backend]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/databases.py
-[aiohttp middleware]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/aiohttp.py
-[starlette middleware]: https://github.com/imbolc/async_django_user/tree/master/async_django_user/starlette.py
+[examples]: https://github.com/imbolc/async-django-user/tree/master/examples
+[django example]: https://github.com/imbolc/async-django-user/tree/master/examples/django_app.py
+[starlette example]: https://github.com/imbolc/async-django-user/tree/master/examples/starlette_app.py
+[aiohttp example]: https://github.com/imbolc/async-django-user/tree/master/examples/aiohttp_app.py
+[asyncpg backend]: https://github.com/imbolc/async-django-user/tree/master/async-django-user/asyncpg.py
+[databases backend]: https://github.com/imbolc/async-django-user/tree/master/async-django-user/databases.py
+[aiohttp middleware]: https://github.com/imbolc/async-django-user/tree/master/async-django-user/aiohttp.py
+[starlette middleware]: https://github.com/imbolc/async-django-user/tree/master/async-django-user/starlette.py
