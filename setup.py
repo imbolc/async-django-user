@@ -12,7 +12,7 @@ if sys.argv[-1] == "publish":
 
 setuptools.setup(
     name="async_django_user",
-    version="0.1.0",
+    version="0.1.1",
     description="Django user for async frameworks",
     long_description=open("./README.md").read(),
     long_description_content_type="text/markdown",

@@ -1,5 +1,5 @@
-Async Django Session
-====================
+Async Django User
+=================
 
 Using [django][] user with async frameworks like [aiohttp][], [starlette][] etc.
 
