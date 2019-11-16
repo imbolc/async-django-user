@@ -41,7 +41,7 @@ class User(dict):
         if not id:
             log.debug("It's a new user without an id")
             return
-        row = await self.backend.load("id", id)
+        row = await self.backend.find_one(id=id)
         if not row:
             log.debug("User not found in db")
             return
@@ -70,7 +70,8 @@ class User(dict):
         It doesn't check if the user is active.
         """
         self._loaded = True
-        data = await self.backend.load(self.backend.username_field, username)
+        data = await self.backend.find_one(
+            **{self.backend.username_field: username})
         if not data:
             log.debug("User not found in db")
             return

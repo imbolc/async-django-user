@@ -6,9 +6,9 @@ class Backend(BaseBackend):
         self.db = db
         super().__init__(*args, **kwargs)
 
-    async def load(self, key, val):
-        sql = f"SELECT * FROM {self.users_table} WHERE {key} = :val"
-        return await self.db.fetch_one(sql, {"val": val})
+    def find_one(self, **filters):
+        sql = select_sql(self.users_table, filters)
+        return self.db.fetch_one(sql, filters)
 
     async def update_by_id(self, id, **changes):
         return await self.db.execute(
@@ -18,6 +18,16 @@ class Backend(BaseBackend):
     def insert(self, **fields):
         sql = insert_sql(self.users_table, fields)
         return self.db.fetch_one(sql, fields)
+
+
+def select_sql(table: str, filters: dict) -> str:
+    """
+    >>> select_sql('tbl', {'foo': 1, 'bar': 2})
+    'SELECT * FROM tbl WHERE foo=:foo AND bar=:bar'
+    """
+    where = " AND ".join(f"{k}=:{k}" for k in filters.keys())
+    sql = f"SELECT * FROM {table} WHERE {where}"
+    return sql
 
 
 def update_by_id_sql(table: str, id: int, changes: dict) -> (str, list):

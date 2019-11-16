@@ -6,13 +6,12 @@ class Backend(BaseBackend):
         self.pool = pool
         super().__init__(*args, **kwargs)
 
-    async def load(self, key, val):
-        sql = f"SELECT * FROM {self.users_table} WHERE {key} = $1"
+    async def find_one(self, **filters):
+        sql, params = select_sql(self.users_table, filters)
         async with self.pool.acquire() as con:
-            return await con.fetchrow(sql, val)
+            return await con.fetchrow(sql, *params)
 
     async def update_by_id(self, id, **changes):
-        print("UP", id, changes)
         sql, params = update_by_id_sql(self.users_table, id, changes)
         async with self.pool.acquire() as con:
             return await con.execute(sql, *params)
@@ -21,6 +20,16 @@ class Backend(BaseBackend):
         sql, params = insert_sql(self.users_table, fields)
         async with self.pool.acquire() as con:
             return await con.fetchval(sql, *params)
+
+
+def select_sql(table: str, filters: dict) -> (str, list):
+    """
+    >>> select_sql('tbl', {'foo': 1, 'bar': 2})
+    ('SELECT * FROM tbl WHERE foo=$1 AND bar=$2', [1, 2])
+    """
+    where = " AND ".join(f"{k}=${i}" for i, k in enumerate(filters.keys(), 1))
+    sql = f"SELECT * FROM {table} WHERE {where}"
+    return sql, list(filters.values())
 
 
 def update_by_id_sql(table: str, id: int, changes: dict) -> (str, list):
